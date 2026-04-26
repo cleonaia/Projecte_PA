@@ -26,7 +26,7 @@ class RecomanadorCollaboratiu(Recomanador):
         valoracions_usuari2 = self._dades._ratings[self._dades._ratings[:, 0] == usuari2]
 
         items_comuns = np.intersect1d(valoracions_usuari1[:, 1], valoracions_usuari2[:, 1])
-        if len(items_comuns) < 2:  # Necessitem mínim 2 ítems en comú
+        if len(items_comuns) < 2:  
             return 0.0
 
         puntuacions1 = []
