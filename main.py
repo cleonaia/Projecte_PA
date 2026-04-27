@@ -12,11 +12,27 @@ class DatasetBase(ABC):
         self.items_file = items_file
 
     def carrega_dades(self):
+        ll=[]
         with open(self.rating,'r') as csv_file:
             csvreades = csv.reader(csv_file)
             fields = next(csvreader)
             for f in csvreader:
-                ll.append(f)
+                parts = f.split(,).strip()
+                row = self.ratings(row[0:4])
+                ll.append(row)
+    def avg_gloval(self):
+        suma=0
+        for i in self.items:
+            suma+=i.ratings
+        return suma/len(self.items)
+
+    def avg_items_no_puntuats(self):
+        
+    def recomana(self,peli):
+        if self.peli>altre.peli:
+            return self.peli
+        else:
+            return altre.peli
               
 def score(num_vots,min_vots,avg_item,avg_global):
   nota = ((num_vots/(num_vots+min_vots))*avg_item)+((num_vots/(num_vots+min_vots))*avg_global)
