@@ -26,8 +26,11 @@ class DatasetBase(ABC):
             suma+=i.ratings
         return suma/len(self.items)
 
-    def avg_items_no_puntuats(self):
-        
+    def avg_items_no_puntuats(self,peli):
+        no_p = []
+        if peli not in ratings[1]:
+            no_p.append(peli)
+        return no_puntuats
     def recomana(self,peli):
         if self.peli>altre.peli:
             return self.peli
@@ -35,10 +38,16 @@ class DatasetBase(ABC):
             return altre.peli
               
 def score(num_vots,min_vots,avg_item,avg_global):
-  nota = ((num_vots/(num_vots+min_vots))*avg_item)+((num_vots/(num_vots+min_vots))*avg_global)
-  return nota
+    nota = ((num_vots/(num_vots+min_vots))*avg_item)+((num_vots/(num_vots+min_vots))*avg_global)
+    return nota
 def prediccio(min_vots):
-
+def matriu(usuaris,items,ratings):
+    usuaris = usuaris.sorted()
+    items = items.sorted()
+    for u in usuaris:
+        matriu = matrix(QQ,
+                        [])
+        
 class RecomanadorSimple(Recomanador):
     def __init__(self, dataset, min_vots):
         self.suma_p=suma_p
