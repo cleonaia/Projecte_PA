@@ -11,9 +11,6 @@ class DatasetBase(ABC):
         self.ratings_file = ratings_file
         self.items_file = items_file
 
-
-class datasetBase:
-  ll=[]
     def carrega_dades(self):
         with open(self.rating,'r') as csv_file:
             csvreades = csv.reader(csv_file)
