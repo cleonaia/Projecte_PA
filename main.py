@@ -1,23 +1,26 @@
 import csv
 import numpy as np
+import abc, abstractmethod
 import os 
 
-min_vots = 200
-num_vots = 600
-avg_item = float
-avg_global = float
 
-rat = ratings.csv
-mov = movies.csv
+class DatasetBase(ABC):
+    def __init__(self, ratings_file, items_file):
+        self.ratings = None
+        self.items = None
+        self.ratings_file = ratings_file
+        self.items_file = items_file
+
 
 class datasetBase:
   ll=[]
     def carrega_dades(self):
-        with open(self.rat,'r') as csv_file:
+        with open(self.rating,'r') as csv_file:
             csvreades = csv.reader(csv_file)
             fields = next(csvreader)
             for f in csvreader:
                 ll.append(f)
+              
 def score(num_vots,min_vots,avg_item,avg_global):
   nota = ((num_vots/(num_vots+min_vots))*avg_item)+((num_vots/(num_vots+min_vots))*avg_global)
   return nota
