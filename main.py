@@ -7,6 +7,17 @@ num_vots = 600
 avg_item = float
 avg_global = float
 
+rat = ratings.csv
+mov = movies.csv
+
+class datasetBase:
+  ll=[]
+    def carrega_dades(self):
+        with open(self.rat,'r') as csv_file:
+            csvreades = csv.reader(csv_file)
+            fields = next(csvreader)
+            for f in csvreader:
+                ll.append(f)
 def score(num_vots,min_vots,avg_item,avg_global):
   nota = ((num_vots/(num_vots+min_vots))*avg_item)+((num_vots/(num_vots+min_vots))*avg_global)
   return nota
