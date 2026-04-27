@@ -8,13 +8,16 @@ avg_item = float
 avg_global = float
 
 def score(num_vots,min_vots,avg_item,avg_global):
-
   nota = ((num_vots/(num_vots+min_vots))*avg_item)+((num_vots/(num_vots+min_vots))*avg_global)
   return nota
 def prediccio(min_vots):
 
-
-
+class RecomanadorSimple(Recomanador):
+    def __init__(self, dataset, min_vots):
+        self.suma_p=suma_p
+        self.min_vots=min_vots
+    def puntuacio(self, avg_item,avg_global,num_vots):
+        punts = ((num_vots*avg_item)/(num_vots + min_vots))+
 class RecomanadorCollaboratiu(Recomanador):
     def __init__(self, dataset, k_veins=5):
         super().__init__(dataset)
