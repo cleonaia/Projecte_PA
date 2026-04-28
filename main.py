@@ -6,7 +6,7 @@ import os
 
 class ConjuntDadesBase():
     def __init__(self, fitxer_valoracions, fitxer_items): 
-        self.valoracions = []  # <-- llista, no diccionari
+        self.valoracions = []
         self.items = []
         self.fitxer_valoracions = fitxer_valoracions
         self.fitxer_items = fitxer_items
@@ -145,6 +145,7 @@ class RecomanadorCollaboratiu(Recomanador):
         return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:5]
 """
 if __name__ == "__main__":
+    #Si fem print de v ens mostre ratings.csv tal cual, com fer per a que ens mostri el fitxer?
     v = "ratings.csv"
     i = "pelicules_Dataset/movies.csv"
     print(v)
