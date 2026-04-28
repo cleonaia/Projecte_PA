@@ -1,62 +1,94 @@
 import csv
 import numpy as np
 import abc
-import os 
+import os
 
+valoracions_p = 'ratings.csv'
+valoracions_ll = 'Ratings.csv'
+pelis = 'movies.csv'
+llibres = 'Users.csv'
 
-class DatasetBase(ABC):
-    def __init__(self, ratings_file, items_file):
-        self.ratings = None
-        self.items = None
-        self.ratings_file = ratings_file
-        self.items_file = items_file
+class ConjuntDadesBase():
+    def __init__(self, fitxer_valoracions, fitxer_items): 
+        self.valoracions = {}
+        self.items = []
+        self.fitxer_valoracions = fitxer_valoracions
+        self.fitxer_items = fitxer_items
 
     def carrega_dades(self):
-        ll=[]
-        with open(self.rating,'r') as csv_file:
-            csvreades = csv.reader(csv_file)
-            fields = next(csvreader)
-            for f in csvreader:
-                parts = f.split(,).strip()
-                row = self.ratings(row[0:4])
-                ll.append(row)
-    def avg_gloval(self):
-        suma=0
-        for i in self.items:
-            suma+=i.ratings
-        return suma/len(self.items)
+        with open(self.fitxer_valoracions, 'r') as H:
+            next(H)
+            for linia in H:
+                fila = linia.strip().split(',')
+                self.valoracions[fila[0]] = [fila[1], float(fila[2])]
+        with open(self.fitxer_items, 'r') as f:
+            next(f)
+            for linia in f:
+                fila = linia.strip().split(',')
+                self.items.append(fila[0])
 
-    def avg_items_no_puntuats(self,peli):
-        no_p = []
-        if peli not in ratings[1]:
-            no_p.append(peli)
-        return no_puntuats
-    def recomana(self,peli):
-        if self.peli>altre.peli:
-            return self.peli
-        else:
-            return altre.peli
-              
-def score(num_vots,min_vots,avg_item,avg_global):
-    nota = ((num_vots/(num_vots+min_vots))*avg_item)+((num_vots/(num_vots+min_vots))*avg_global)
-    return nota
-def prediccio(min_vots):
-def matriu(usuaris,items,ratings):
-    usuaris = usuaris.sorted()
-    items = items.sorted()
-    for u in usuaris:
-        matriu = matrix(QQ,
-                        [])
-        
+    def mitjana_global(self):
+        suma = 0
+        comptador = 0
+        for v in self.valoracions:
+            suma += v[2]
+            comptador += 1
+        if comptador == 0:
+            return 0
+        return suma / comptador
+    
+    def mitjana_item(self, item_id):
+        suma = 0
+        comptador = 0
+        for v in self.valoracions:
+            if v[1] == item_id:
+                suma += v[2]
+                comptador += 1
+        if comptador == 0:
+            return 0
+        return suma / comptador
+
+    def num_vots(self, item_id):
+        comptador = 0
+        for v in self.valoracions:
+            if v[1] == item_id:
+                comptador += 1
+        return comptador
+
+    def items_no_valorats(self, usuari_id):
+        valorats = []
+        for v in self.valoracions:
+            if v[0] == usuari_id:
+                valorats.append(v[1])
+        no_valorats = []
+        for item in self.items:
+            if item not in valorats:
+                no_valorats.append(item)
+        return no_valorats
+
+class Recomanador(abc.ABC):
+    def __init__(self, conjunt_dades):
+        self.conjunt_dades = conjunt_dades
+
+    @abc.abstractmethod
+    def recomana(self, usuari_id):
+        raise NotImplementedError
+
 class RecomanadorSimple(Recomanador):
-    def __init__(self, dataset, min_vots):
-        self.suma_p=suma_p
-        self.min_vots=min_vots
-    def puntuacio(self, avg_item,avg_global,num_vots):
-        punts = ((num_vots*avg_item)/(num_vots + min_vots))+
+    def __init__(self, conjunt_dades, min_vots):
+        super().__init__(conjunt_dades)
+        self.min_vots = min_vots
+
+    def puntuacio(self, item_id):
+        mitjana_item = self.conjunt_dades.mitjana_item(item_id)
+        mitjana_global = self.conjunt_dades.mitjana_global()
+        num_vots = self.conjunt_dades.num_vots(item_id)
+        return ((num_vots / (num_vots + self.min_vots)) * mitjana_item) + ((self.min_vots / (num_vots + self.min_vots)) * mitjana_global)
+
+
 class RecomanadorCollaboratiu(Recomanador):
-    def __init__(self, dataset, k_veins=5):
-        super().__init__(dataset)
+    def __init__(self, conjunt_dades, k_veins=5):
+        super().__init__(conjunt_dades)
         self._k_veins = k_veins  # Nombre de veins a considerar
 
     def calcula_similitud(self, usuari1, usuari2):
@@ -105,17 +137,9 @@ class RecomanadorCollaboratiu(Recomanador):
         return similituds[:self._k_veins]
     
 
-    def recomienda(self, usuari_id):
-        items_no_valorats = self._dades.get_items_no_valorats(usuari_id)
-        if not items_no_valorats:
-            return []
-            
-        veins = self.troba_veins(usuari_id)
+    def recomana(self, usuari_id):
+        items_a_provar = self.conjunt_dades.items_no_valorats(usuari_id)
         scores = {}
-        
-        for item_id in items_no_valorats:
-            puntuacio = self.calcula_puntuacio(usuari_id, item_id, veins)
-            if puntuacio is not None:
-                scores[item_id] = puntuacio
-        
+        for item_id in items_a_provar:
+            scores[item_id] = self.puntuacio(item_id)
         return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:5]
