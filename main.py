@@ -3,14 +3,10 @@ import numpy as np
 import abc
 import os
 
-valoracions_p = 'ratings.csv'
-valoracions_ll = 'Ratings.csv'
-pelis = 'movies.csv'
-llibres = 'Users.csv'
 
 class ConjuntDadesBase():
     def __init__(self, fitxer_valoracions, fitxer_items): 
-        self.valoracions = {}
+        self.valoracions = []  # <-- llista, no diccionari
         self.items = []
         self.fitxer_valoracions = fitxer_valoracions
         self.fitxer_items = fitxer_items
@@ -19,19 +15,23 @@ class ConjuntDadesBase():
         with open(self.fitxer_valoracions, 'r') as H:
             next(H)
             for linia in H:
-                fila = linia.strip().split(',')
-                self.valoracions[fila[0]] = [fila[1], float(fila[2])]
+                part = linia.strip().split(',')
+
+                #Preguntar si es pot fer amb matriu
+                
+                self.valoracions.append([part[0], part[1], float(part[2])])
         with open(self.fitxer_items, 'r') as f:
             next(f)
             for linia in f:
-                fila = linia.strip().split(',')
-                self.items.append(fila[0])
+                part = linia.strip().split(',')
+                self.items.append(part[0])
 
     def mitjana_global(self):
         suma = 0
         comptador = 0
-        for v in self.valoracions:
-            suma += v[2]
+        for linia in self.fitxer_valoracions:
+            part = linia.strip().split(',')
+            suma += float(part[2])
             comptador += 1
         if comptador == 0:
             return 0
@@ -65,7 +65,7 @@ class ConjuntDadesBase():
             if item not in valorats:
                 no_valorats.append(item)
         return no_valorats
-
+"""
 class Recomanador(abc.ABC):
     def __init__(self, conjunt_dades):
         self.conjunt_dades = conjunt_dades
@@ -143,3 +143,14 @@ class RecomanadorCollaboratiu(Recomanador):
         for item_id in items_a_provar:
             scores[item_id] = self.puntuacio(item_id)
         return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:5]
+"""
+if __name__ == "__main__":
+    v = "ratings.csv"
+    i = "pelicules_Dataset/movies.csv"
+    print(v)
+    dades = ConjuntDadesBase(v, i)
+    print("Mitjana global:", dades.mitjana_global())
+    print("Mitjana item '1':", dades.mitjana_item('1'))
+    print("Num vots item '1':", dades.num_vots('1'))
+    print("Items no valorats per usuari '1':", dades.items_no_valorats('1'))
+    
