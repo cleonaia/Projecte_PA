@@ -1,10 +1,10 @@
 import csv
 import numpy as np
-import abc
+from abc import ABC, abstractmethod
 import os
 
 
-class ConjuntDadesBase():
+class ConjuntDadesBase(ABC):
     def __init__(self, fitxer_valoracions, fitxer_items): 
         self.valoracions = []
         self.items = []
@@ -65,12 +65,12 @@ class ConjuntDadesBase():
             if item not in valorats:
                 no_valorats.append(item)
         return no_valorats
-"""
-class Recomanador(abc.ABC):
+
+class Recomanador(ABC):
     def __init__(self, conjunt_dades):
         self.conjunt_dades = conjunt_dades
 
-    @abc.abstractmethod
+    @abstractmethod
     def recomana(self, usuari_id):
         raise NotImplementedError
 
