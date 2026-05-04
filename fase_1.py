@@ -83,8 +83,8 @@ class Recomanador(ABC):
 
     @abstractmethod
     def recomana(self, usuari_id, limit=5):
+        pass
         
-
 
 class RecomanadorSimple(Recomanador):
     def __init__(self, conjunt_dades, min_vots=3):
