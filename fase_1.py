@@ -11,7 +11,7 @@ class ConjuntDadesBase(ABC):
         self.items = {}
 
     def carregar_dades(self):
-        with open(self.fitxer_valoracions, 'r', encoding='utf-8') as fitxer:
+        with open(self.fitxer_valoracions, 'r') as fitxer:
             lector = csv.reader(fitxer)
             next(lector)
             self.valoracions = []
@@ -22,7 +22,7 @@ class ConjuntDadesBase(ABC):
                 if puntuacio != 0:
                     self.valoracions.append((usuari_id, item_id, puntuacio))
 
-        with open(self.fitxer_items, 'r', encoding='utf-8') as fitxer:
+        with open(self.fitxer_items, 'r') as fitxer:
             lector = csv.reader(fitxer)
             next(lector)
             self.items = {}
@@ -103,17 +103,6 @@ class RecomanadorSimple(Recomanador):
         )
         return score
 
-    def recomana(self, usuari_id, limit=5):
-        candidats = self.conjunt_dades.items_no_valorats(usuari_id)
-        puntuacions = []
-
-        for item_id in candidats:
-            score = self.puntuacio(item_id)
-            if score is not None:
-                puntuacions.append((item_id, self.conjunt_dades.items[item_id], score))
-
-        puntuacions.sort(key=lambda x: x[2], reverse=True)
-        return puntuacions[:limit]
 
 
 class RecomanadorCollaboratiu(Recomanador):
