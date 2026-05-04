@@ -68,11 +68,13 @@ class ConjuntDadesBase(ABC):
 
 
 class PelliculesDataset(ConjuntDadesBase):
-    pass
+    def __init__(self, fitxer_valoracions, fitxer_item):
+        super().__init__(fitxer_valoracions, fitxer_item)
 
 
 class LlibresDataset(ConjuntDadesBase):
-    pass
+    def __init__(self, fitxer_valoracions, fitxer_item):
+        super().__init__(fitxer_valoracions, fitxer_item)
 
 
 class Recomanador(ABC):
@@ -81,7 +83,7 @@ class Recomanador(ABC):
 
     @abstractmethod
     def recomana(self, usuari_id, limit=5):
-        pass
+        
 
 
 class RecomanadorSimple(Recomanador):
