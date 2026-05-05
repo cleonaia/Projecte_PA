@@ -3,24 +3,21 @@ import numpy as np
 from abc import ABC, abstractmethod
 import os
 
-
 class ConjuntDadesBase(ABC):
     def __init__(self, fitxer_valoracions, fitxer_items): 
         self.valoracions = []
         self.items = []
         self.fitxer_valoracions = fitxer_valoracions
         self.fitxer_items = fitxer_items
+        self.carrega_dades()  # Carga los datos al crear el objeto
 
     def carrega_dades(self):
-        with open(self.fitxer_valoracions, 'r') as H:
+        with open(self.fitxer_valoracions, 'r', encoding='utf-8') as H:
             next(H)
             for linia in H:
                 part = linia.strip().split(',')
-
-                #Preguntar si es pot fer amb matriu
-                
                 self.valoracions.append([part[0], part[1], float(part[2])])
-        with open(self.fitxer_items, 'r') as f:
+        with open(self.fitxer_items, 'r', encoding='utf-8') as f:
             next(f)
             for linia in f:
                 part = linia.strip().split(',')
@@ -29,14 +26,13 @@ class ConjuntDadesBase(ABC):
     def mitjana_global(self):
         suma = 0
         comptador = 0
-        for linia in self.fitxer_valoracions:
-            part = linia.strip().split(',')
-            suma += float(part[2])
+        for v in self.valoracions:
+            suma += v[2]
             comptador += 1
         if comptador == 0:
             return 0
         return suma / comptador
-    
+        
     def mitjana_item(self, item_id):
         suma = 0
         comptador = 0
@@ -143,15 +139,15 @@ class RecomanadorCollaboratiu(Recomanador):
         for item_id in items_a_provar:
             scores[item_id] = self.puntuacio(item_id)
         return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:5]
-"""
+    
 if __name__ == "__main__":
     #Si fem print de v ens mostre ratings.csv tal cual, com fer per a que ens mostri el fitxer?
-    v = "ratings.csv"
-    i = "pelicules_Dataset/movies.csv"
-    print(v)
+    v = os.path.join("pelicules_Dataset", "ratings.csv")
+
+    i = os.path.join("pelicules_Dataset", "movies.csv")
     dades = ConjuntDadesBase(v, i)
+    print(dades.valoracions)
     print("Mitjana global:", dades.mitjana_global())
     print("Mitjana item '1':", dades.mitjana_item('1'))
     print("Num vots item '1':", dades.num_vots('1'))
     print("Items no valorats per usuari '1':", dades.items_no_valorats('1'))
-    
