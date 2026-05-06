@@ -242,10 +242,7 @@ def mostrar_recomanacions(recomanacions):
 
 def main():
     print('SISTEMA DE RECOMANACIONS')
-    print('------------------------')
-
     tipus_dades = input('Selecciona el tipus de dades (pelis/llibres): ').strip().lower()
-
     if tipus_dades == 'pelis':
         dataset = PelliculesDataset('pelicules_Dataset/ratings.csv', 'pelicules_Dataset/movies.csv')
     elif tipus_dades == 'llibres':
@@ -257,23 +254,22 @@ def main():
     try:
         dataset.carregar_dades()
     except FileNotFoundError as e:
-        print(f'Error: no s\'ha trobat el fitxer {e.filename}')
+        print("Error: no s'ha trobat el fitxer")
         return
 
     usuaris = dataset.obtenir_usuaris()
     if not usuaris:
-        print('No hi ha dades disponibles.')
+        print("No hi ha dades disponibles.")
         return
 
-    print(f'\nUsuaris disponibles: {", ".join(usuaris[:10])}...')
-    usuari_id = input('Introdueix l\'ID de l\'usuari: ').strip()
+    print(f"Usuaris disponibles: {", ".join(usuaris[:10])}...")
+    usuari_id = input('Introdueix l'ID de l'usuari: ').strip()
 
     if usuari_id not in usuaris:
         print('Usuari no vàlid.')
         return
 
     tipus_recomana = input('\nTipus de recomana (simple/col·laboratiu): ').strip().lower()
-
     if tipus_recomana == 'simple':
         min_vots = input('Nombre mínim de valoracions (defecte 3): ').strip()
         try:
@@ -291,17 +287,13 @@ def main():
     else:
         print('Tipus de recomanador no vàlid.')
         return
-
     limit = input('Nombre de recomanacions (defecte 5): ').strip()
     try:
         limit = int(limit) if limit else 5
     except ValueError:
         limit = 5
-
-    print('\nCalculant recomanacions...')
     recomanacions = recomanador.recomana(usuari_id, limit)
     mostrar_recomanacions(recomanacions)
-
-
+    
 if _name_ == '_main_':
     main()
