@@ -12,12 +12,12 @@ class ConjuntDadesBase(ABC):
         self.carrega_dades()  # Carga los datos al crear el objeto
 
     def carrega_dades(self):
-        with open(self.fitxer_valoracions, 'r', encoding='utf-8') as H:
+        with open(self.fitxer_valoracions, 'r') as H:
             next(H)
             for linia in H:
                 part = linia.strip().split(',')
                 self.valoracions.append([part[0], part[1], float(part[2])])
-        with open(self.fitxer_items, 'r', encoding='utf-8') as f:
+        with open(self.fitxer_items, 'r') as f:
             next(f)
             for linia in f:
                 part = linia.strip().split(',')
