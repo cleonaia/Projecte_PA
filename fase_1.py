@@ -4,24 +4,36 @@ from abc import ABC, abstractmethod
 
 
 class DatasetBase(ABC):
-    def __init__(self, fitxer_valoracions, fitxer_items):
+    def _init_(self, fitxer_valoracions, fitxer_items):
         self.fitxer_valoracions = fitxer_valoracions
         self.fitxer_items = fitxer_items
         self.valoracions = []
         self.items = {}
+        self.valoracions_per_usuari = {}
+        self.valoracions_per_item = {}
+        self.num_votes_per_item = {}
+        self.avg_item_per_item = {}
+        self.avg_global_cached = 0
 
     def carregar_dades(self):
         with open(self.fitxer_valoracions, 'r') as fitxer:
             lector = csv.reader(fitxer)
             next(lector)
             self.valoracions = []
+            self.valoracions_per_usuari = {}
+            self.valoracions_per_item = {}
             for fila in lector:
                 usuari_id = str(fila[0])
                 item_id = str(fila[1])
                 puntuacio = float(fila[2])
                 if puntuacio != 0:
                     self.valoracions.append((usuari_id, item_id, puntuacio))
-
+                    if usuari_id not in self.valoracions_per_usuari:
+                        self.valoracions_per_usuari[usuari_id] = {}
+                    if item_id not in self.valoracions_per_item:
+                        self.valoracions_per_item[item_id] = []
+                    self.valoracions_per_usuari[usuari_id][item_id] = puntuacio
+                    self.valoracions_per_item[item_id].append(puntuacio)
         with open(self.fitxer_items, 'r') as fitxer:
             lector = csv.reader(fitxer)
             next(lector)
@@ -31,72 +43,83 @@ class DatasetBase(ABC):
                 nom_item = fila[1]
                 self.items[item_id] = nom_item
 
-    def obtenir_usuaris(self):
-        return sorted({v[0] for v in self.valoracions})
+        self.actualitzar_indices()
 
-    def obtenir_valoracions_usuari(self, usuari_id):
-        dades = {}
-        for usuari, item, puntuacio in self.valoracions:
-            if usuari == usuari_id:
-                dades[item] = puntuacio
-        return dades
+    def actualitzar_indices(self):
+        self.num_votes_per_item = {
+            item_id: len(puntuacions)
+            for item_id, puntuacions in self.valoracions_per_item.items()
+        }
+        self.avg_item_per_item = {
+            item_id: (sum(puntuacions) / len(puntuacions))
+            for item_id, puntuacions in self.valoracions_per_item.items()
+        }
+        self.avg_global_cached = self._calcular_avg_global_cached()
 
-    def get_avg_global(self, min_vots=0):
-        mitjanes = []
-        for item_id in self.items:
-            num_vots = self.get_num_votes(item_id)
-            if num_vots >= min_vots:
-                mitjana = self.get_item_avg(item_id)
-                if mitjana > 0:
-                    mitjanes.append(mitjana)
+    def _calcular_avg_global_cached(self, min_vots=0):
+        mitjanes = [self.avg_item_per_item[item_id]
+            for item_id, num_vots in self.num_votes_per_item.items()
+            if num_vots >= min_vots]
         if not mitjanes:
             return 0
         return sum(mitjanes) / len(mitjanes)
 
+    def obtenir_usuaris(self):
+        return sorted(self.valoracions_per_usuari.keys())
+
+    def obtenir_valoracions_usuari(self, usuari_id):
+        return dict(self.valoracions_per_usuari.get(usuari_id, {}))
+
+    def get_avg_global(self, min_vots=0):
+        if min_vots <= 0:
+            return self.avg_global_cached
+        return self._calcular_avg_global_cached(min_vots)
+
     def get_item_avg(self, item_id):
-        puntuacions = [puntuacio for _, item, puntuacio in self.valoracions if item == item_id]
-        if not puntuacions:
-            return 0
-        return sum(puntuacions) / len(puntuacions)
+        return self.avg_item_per_item.get(item_id, 0)
 
     def get_num_votes(self, item_id):
-        return sum(1 for _, item, _ in self.valoracions if item == item_id)
+        return self.num_votes_per_item.get(item_id, 0)
 
     def get_items_no_valorats(self, usuari_id):
-        valorats = set(self.obtenir_valoracions_usuari(usuari_id).keys())
+        valorats = set(self.valoracions_per_usuari.get(usuari_id, {}).keys())
         return [item_id for item_id in self.items if item_id not in valorats]
 
-
-
 class PelliculesDataset(DatasetBase):
-    def __init__(self, fitxer_valoracions, fitxer_items):
-        super().__init__(fitxer_valoracions, fitxer_items)
+    def _init_(self, fitxer_valoracions, fitxer_items):
+        super()._init_(fitxer_valoracions, fitxer_items)
 
-
+cl
 class LlibresDataset(DatasetBase):
-    def __init__(self, fitxer_valoracions, fitxer_items):
-        super().__init__(fitxer_valoracions, fitxer_items)
+    def _init_(self, fitxer_valoracions, fitxer_items):
+        super()._init_(fitxer_valoracions, fitxer_items)
 
     def carregar_dades(self):
         with open(self.fitxer_valoracions, 'r') as fitxer:
             lector = csv.reader(fitxer)
-            next(lector)  # Saltar capçalera
+            next(lector)
             self.valoracions = []
+            self.valoracions_per_usuari = {}
+            self.valoracions_per_item = {}
             for fila in lector:
                 usuari_id = str(fila[0])
-                item_id = str(fila[1])  # ISBN
+                item_id = str(fila[1])
                 puntuacio = float(fila[2])
                 if puntuacio != 0:
                     self.valoracions.append((usuari_id, item_id, puntuacio))
+                    self.valoracions_per_usuari.setdefault(usuari_id, {})[item_id] = puntuacio
+                    self.valoracions_per_item.setdefault(item_id, []).append(puntuacio)
 
         self.items = {}
         for _, item_id, _ in self.valoracions:
             if item_id not in self.items:
-                self.items[item_id] = f'Llibre (ISBN: {item_id})'
+                self.items[item_id] = f'Llibre (Codi: {item_id})'
+
+        self.actualitzar_indices()
 
 
 class Recomanador(ABC):
-    def __init__(self, conjunt_dades):
+    def _init_(self, conjunt_dades):
         self.conjunt_dades = conjunt_dades
 
     @abstractmethod
@@ -105,12 +128,12 @@ class Recomanador(ABC):
         
 
 class RecomanadorSimple(Recomanador):
-    def __init__(self, conjunt_dades, min_vots=3):
-        super().__init__(conjunt_dades)
+    def _init_(self, conjunt_dades, min_vots=3):
+        super()._init_(conjunt_dades)
         self.min_vots = min_vots
         self._avg_global = None
 
-    def calcula_puntuacio(self, item_id):
+    def calcula_score(self, item_id):
         num_vots = self.conjunt_dades.get_num_votes(item_id)
         if num_vots < self.min_vots:
             return None
@@ -125,11 +148,11 @@ class RecomanadorSimple(Recomanador):
         return score
 
     def recomana(self, usuari_id, limit=5):
-        candidats = self.conjunt_dades.items_no_valorats(usuari_id)
+        candidats = self.conjunt_dades.get_items_no_valorats(usuari_id)
         recomanacions = []
         
         for item_id in candidats:
-            puntuacio = self.calcula_puntuacio(item_id)
+            puntuacio = self.calcula_score(item_id)
             if puntuacio is not None:
                 nom_item = self.conjunt_dades.items.get(item_id, f'Item {item_id}')
                 recomanacions.append((item_id, nom_item, puntuacio))
@@ -140,8 +163,8 @@ class RecomanadorSimple(Recomanador):
 
 
 class RecomanadorCollaboratiu(Recomanador):
-    def __init__(self, conjunt_dades, k_veins=2):
-        super().__init__(conjunt_dades)
+    def _init_(self, conjunt_dades, k_veins=2):
+        super()._init_(conjunt_dades)
         self.k_veins = k_veins
 
     def calcula_similitud(self, usuari1, usuari2):
@@ -219,7 +242,10 @@ def mostrar_recomanacions(recomanacions):
 
 def main():
     print('SISTEMA DE RECOMANACIONS')
+    print('------------------------')
+
     tipus_dades = input('Selecciona el tipus de dades (pelis/llibres): ').strip().lower()
+
     if tipus_dades == 'pelis':
         dataset = PelliculesDataset('pelicules_Dataset/ratings.csv', 'pelicules_Dataset/movies.csv')
     elif tipus_dades == 'llibres':
@@ -227,6 +253,7 @@ def main():
     else:
         print('Tipus de dades no vàlid.')
         return
+
     try:
         dataset.carregar_dades()
     except FileNotFoundError as e:
@@ -276,5 +303,5 @@ def main():
     mostrar_recomanacions(recomanacions)
 
 
-if __name__ == '__main__':
+if _name_ == '_main_':
     main()
