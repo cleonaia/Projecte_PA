@@ -9,7 +9,7 @@ class ConjuntDadesBase(ABC):
         self.items = []
         self.fitxer_valoracions = fitxer_valoracions
         self.fitxer_items = fitxer_items
-        self.carrega_dades()  # Carga los datos al crear el objeto
+        self.carrega_dades()
 
     def carrega_dades(self):
         with open(self.fitxer_valoracions, 'r') as H:
