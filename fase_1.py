@@ -269,7 +269,7 @@ def main():
         print('Usuari no vàlid.')
         return
 
-    tipus_recomana = input('\nTipus de recomana (simple/col·laboratiu): ').strip().lower()
+    tipus_recomana = input('Tipus de recomana (simple/col·laboratiu): ').strip().lower()
     if tipus_recomana == 'simple':
         min_vots = input('Nombre mínim de valoracions (defecte 3): ').strip()
         try:
