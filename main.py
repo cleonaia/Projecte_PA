@@ -88,7 +88,6 @@ class RecomanadorCollaboratiu(Recomanador):
         self._k_veins = k_veins  # Nombre de veins a considerar
 
     def calcula_similitud(self, usuari1, usuari2):
-        # Obtenir valoracions dels dos usuaris
         valoracions_usuari1 = self._dades._ratings[self._dades._ratings[:, 0] == usuari1]
         valoracions_usuari2 = self._dades._ratings[self._dades._ratings[:, 0] == usuari2]
 
@@ -112,7 +111,6 @@ class RecomanadorCollaboratiu(Recomanador):
             return 0.0
         
         try:
-            # Calcula correlació de Pearson
             corr = np.corrcoef(puntuacions1, puntuacions2)[0, 1]
             return 0.0 if np.isnan(corr) else corr
         except:
