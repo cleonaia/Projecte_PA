@@ -78,7 +78,6 @@ class LlibresDataset(DatasetBase):
         super().__init__(fitxer_valoracions, fitxer_items)
 
     def carregar_dades(self):
-        # Carregar valoracions de libros
         with open(self.fitxer_valoracions, 'r') as fitxer:
             lector = csv.reader(fitxer)
             next(lector)  # Saltar capçalera
@@ -90,7 +89,6 @@ class LlibresDataset(DatasetBase):
                 if puntuacio != 0:
                     self.valoracions.append((usuari_id, item_id, puntuacio))
 
-        # Per als items de libros, els identifiquem pel ISBN
         self.items = {}
         for _, item_id, _ in self.valoracions:
             if item_id not in self.items:
@@ -110,7 +108,6 @@ class RecomanadorSimple(Recomanador):
     def __init__(self, conjunt_dades, min_vots=3):
         super().__init__(conjunt_dades)
         self.min_vots = min_vots
-        # Atributo según diagrama
         self._avg_global = None
 
     def calcula_puntuacio(self, item_id):
@@ -222,10 +219,7 @@ def mostrar_recomanacions(recomanacions):
 
 def main():
     print('SISTEMA DE RECOMANACIONS')
-    print('------------------------')
-
     tipus_dades = input('Selecciona el tipus de dades (pelis/llibres): ').strip().lower()
-
     if tipus_dades == 'pelis':
         dataset = PelliculesDataset('pelicules_Dataset/ratings.csv', 'pelicules_Dataset/movies.csv')
     elif tipus_dades == 'llibres':
@@ -233,7 +227,6 @@ def main():
     else:
         print('Tipus de dades no vàlid.')
         return
-
     try:
         dataset.carregar_dades()
     except FileNotFoundError as e:
