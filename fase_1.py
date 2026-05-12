@@ -2,7 +2,6 @@ import csv
 import math
 from abc import ABC, abstractmethod
 
-
 class DatasetBase(ABC): #Classe abstracta base per gestionar datasets
     def __init__(self, fitxer_valoracions, fitxer_items):
         self.fitxer_valoracions = fitxer_valoracions
@@ -11,9 +10,9 @@ class DatasetBase(ABC): #Classe abstracta base per gestionar datasets
         self.items = {} #Creem un diccionari per buscar el nom_item amb el seu item_id
         self.valoracions_per_usuari = {} #Creem un diccionari per buscar les valoracions d'un usuari amb el seu usuari_id
         self.valoracions_per_item = {} #Creem un diccionari per buscar les valoracions d'un item amb el seu item_id
-        self.num_votes_per_item = {} #Creem un diccionari per guardar el nombre de valoracions per cada item
+        self.num_vots_per_item = {} #Creem un diccionari per guardar el nombre de valoracions per cada item
         self.avg_item_per_item = {} #Creem un diccionari per guardar la mitjana de valoracions per cada item
-        self.avg_global_cached = 0 #Creem una variable per guardar la mitjana global de valoracions, que es calcularà un cop carregades les dades
+        self.avg_global_cached = 0 #Creem una variable per guardar la mitjana global de valoracions per evitar recalcular-la constantment.
 
     def carregar_dades(self):
         with open(self.fitxer_valoracions, 'r') as fitxer: #Carreguem les valoracions des del fitxer CSV
@@ -47,7 +46,7 @@ class DatasetBase(ABC): #Classe abstracta base per gestionar datasets
     #Un cop carregades les dades, actualitzem els diccionaris de nombre de valoracions per item, mitjana de valoracions per item i mitjana global de valoracions
 
     def actualitzar_index(self):
-        self.num_votes_per_item = {item_id: len(puntuacions) for item_id, puntuacions in self.valoracions_per_item.items()} #Actualitzem el diccionari de nombre de valoracions per item,
+        self.num_vots_per_item = {item_id: len(puntuacions) for item_id, puntuacions in self.valoracions_per_item.items()} #Actualitzem el diccionari de nombre de valoracions per item,
         # on la clau és l'item_id i el valor és la longitud de la llista de puntuacions per aquell item
         self.avg_item_per_item = {item_id: (sum(puntuacions) / len(puntuacions)) for item_id, puntuacions in self.valoracions_per_item.items()} #Actualitzem el diccionari de mitjana de valoracions per item, 
         #on la clau és l'item_id i el valor és la mitjana de puntuacions
@@ -56,7 +55,7 @@ class DatasetBase(ABC): #Classe abstracta base per gestionar datasets
     
     def _calcular_avg_global_cached(self, min_vots: int = 0) -> float:
         mitjanes = [self.avg_item_per_item[item_id]#Obtenim la mitjana de valoracions per item només per aquells items que tenen un nombre de valoracions igual o superior al mínim
-            for item_id, num_vots in self.num_votes_per_item.items()
+            for item_id, num_vots in self.num_vots_per_item.items()
             if num_vots >= min_vots] #Si el nombre de valoracions per item és menor que el mínim, no s'inclou la mitjana d'aquest item en el càlcul de la mitjana global
         if not mitjanes: #Si no hi ha cap item que compleixi el criteri de mínim de valoracions, retornem 0
             return 0
@@ -79,7 +78,7 @@ class DatasetBase(ABC): #Classe abstracta base per gestionar datasets
         return self.avg_item_per_item.get(item_id, 0)
 
     def get_num_vots(self, item_id: str) -> int:
-        return self.num_votes_per_item.get(item_id, 0)
+        return self.num_vots_per_item.get(item_id, 0)
 
     def get_items_no_valorats(self, usuari_id: str) -> List[str]:
         valorats = set(self.valoracions_per_usuari.get(usuari_id, {}).keys())
