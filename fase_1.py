@@ -78,7 +78,7 @@ class DatasetBase(ABC): #Classe abstracta base per gestionar datasets
     def get_item_avg(self, item_id: str) -> float:
         return self.avg_item_per_item.get(item_id, 0)
 
-    def get_num_votes(self, item_id: str) -> int:
+    def get_num_vots(self, item_id: str) -> int:
         return self.num_votes_per_item.get(item_id, 0)
 
     def get_items_no_valorats(self, usuari_id: str) -> List[str]:
