@@ -54,7 +54,7 @@ class DatasetBase(ABC): #Classe abstracta base per gestionar datasets
         self.avg_global_cached = self._calcular_avg_global_cached() 
     #Actualitzem la variable de mitjana global de valoracions, que es calcularà un cop carregades les dades i es guardarà en aquesta variable per evitar recalcular-la cada vegada que es demani
     
-    def _calcular_avg_global_cached(self, min_vots=0):
+    def _calcular_avg_global_cached(self, min_vots: int = 0) -> float:
         mitjanes = [self.avg_item_per_item[item_id]#Obtenim la mitjana de valoracions per item només per aquells items que tenen un nombre de valoracions igual o superior al mínim
             for item_id, num_vots in self.num_votes_per_item.items()
             if num_vots >= min_vots] #Si el nombre de valoracions per item és menor que el mínim, no s'inclou la mitjana d'aquest item en el càlcul de la mitjana global
@@ -62,26 +62,26 @@ class DatasetBase(ABC): #Classe abstracta base per gestionar datasets
             return 0
         return sum(mitjanes) / len(mitjanes) #Retornem la mitjana de les mitjanes de valoracions per item que compleixen el criteri de mínim de valoracions
 
-    def obtenir_usuaris(self):
+    def obtenir_usuaris(self) -> List[str]:
         return sorted(self.valoracions_per_usuari.keys()) #Retornem una llista ordenada dels usuaris que han fet valoracions, que són les claus del diccionari de valoracions per usuari
 
-    def obtenir_valoracions_usuari(self, usuari_id):
+    def obtenir_valoracions_usuari(self, usuari_id: str) -> Dict[str, float]:
         return dict(self.valoracions_per_usuari.get(usuari_id, {})) #Retornem un diccionari de les valoracions d'un usuari, que és el valor associat a l'usuari_id en el diccionari de valoracions per usuari. 
         #Si l'usuari_id no existeix, retornem un diccionari buit
 
-    def get_avg_global(self, min_vots=0):
+    def get_avg_global(self, min_vots: int = 0) -> float:
         if min_vots <= 0: #Si el mínim de valoracions és 0 o negatiu, retornem la mitjana global cachejada, 
             #que es va calcular un cop carregades les dades i es va guardar en la variable avg_global_cached.
             return self.avg_global_cached
         return self._calcular_avg_global_cached(min_vots) #Si el mínim de valoracions és positiu, recalculem la mitjana global amb el nou mínim de valoracions
 
-    def get_item_avg(self, item_id):
+    def get_item_avg(self, item_id: str) -> float:
         return self.avg_item_per_item.get(item_id, 0)
 
-    def get_num_vots(self, item_id):
+    def get_num_votes(self, item_id: str) -> int:
         return self.num_votes_per_item.get(item_id, 0)
 
-    def get_items_no_valorats(self, usuari_id):
+    def get_items_no_valorats(self, usuari_id: str) -> List[str]:
         valorats = set(self.valoracions_per_usuari.get(usuari_id, {}).keys())
         return [item_id for item_id in self.items if item_id not in valorats]
 
@@ -110,7 +110,7 @@ class LlibresDataset(DatasetBase):
                     self.valoracions_per_item.setdefault(item_id, []).append(puntuacio)
 
         self.items = {}
-        for _, item_id, _ in self.valoracions:
+        for _, item_id, _ in self.valoracions: #Si el dataset de llibres no té un fitxer d'ítems amb noms, podem crear noms genèrics basats en l'ID del llibre (ISBN)
             if item_id not in self.items:#Si l'item_id no està al diccionari d'items, el creem amb un nom basat en el seu codi, ja que el fitxer de llibres no conté els noms dels llibres
                 self.items[item_id] = f"Llibre (Codi: {item_id})"
 
@@ -118,20 +118,20 @@ class LlibresDataset(DatasetBase):
 
 
 class Recomanador(ABC):
-    def __init__(self, conjunt_dades):
+    def __init__(self, conjunt_dades: DatasetBase):
         self.conjunt_dades = conjunt_dades
 
     @abstractmethod
-    def recomana(self, usuari_id, limit=5):
+    def recomana(self, usuari_id: str, limit: int = 5) -> List[Tuple[str, str, float]]:
         raise NotImplementedError
 
 class RecomanadorSimple(Recomanador):
-    def __init__(self, conjunt_dades, min_vots=3):
+    def __init__(self, conjunt_dades: DatasetBase, min_vots: int = 3):
         super().__init__(conjunt_dades)
         self.min_vots = min_vots
         self._avg_global = None
 
-    def calcula_score(self, item_id):
+    def _calcula_score(self, item_id: str) -> float:
         num_vots = self.conjunt_dades.get_num_vots(item_id) #Obtenim el nombre de valoracions per aquest item
         if num_vots < self.min_vots: #Si el nombre de valoracions per aquest item és menor que el mínim no podem calcular un score fiable, així que retornem None
             return None
@@ -142,7 +142,7 @@ class RecomanadorSimple(Recomanador):
         score = ((num_vots / (num_vots + self.min_vots)) * avg_item + (self.min_vots / (num_vots + self.min_vots)) * avg_global)
         return score
     
-    def recomana(self, usuari_id, limit=5):
+    def recomana(self, usuari_id: str, limit: int = 5) -> List[Tuple[str, str, float]]:
         candidats = self.conjunt_dades.get_items_no_valorats(usuari_id)#Obtenim la llista d'items que l'usuari no ha valorat, que són els candidats a ser recomanats
         recomanacions = []
         for item_id in candidats:
@@ -154,14 +154,12 @@ class RecomanadorSimple(Recomanador):
         recomanacions.sort(key=lambda x: x[2], reverse=True)#Ordenem les recomanacions per puntuació de manera descendent, els items amb millor nota apareixen primer
         return recomanacions[:limit] #Retornem només les primeres recomanacions segons el límit establert, que en el nostre cas és 5 per defecte
 
-
-
 class RecomanadorCollaboratiu(Recomanador):
-    def __init__(self, conjunt_dades, k_veins=2):
+    def __init__(self, conjunt_dades: DatasetBase, k_veins: int = 2):
         super().__init__(conjunt_dades)
         self.k_veins = k_veins
 
-    def calcula_similitud(self, usuari1, usuari2): #Calculem la similitud entre dos usuaris utilitzant la similitud del cosinus, que es basa en les valoracions que han fet els dos usuaris sobre els mateixos items
+    def _calcula_similitud(self, usuari1: str, usuari2: str) -> float: #Calculem la similitud entre dos usuaris utilitzant la similitud del cosinus, que es basa en les valoracions que han fet els dos usuaris sobre els mateixos items
         val1 = self.conjunt_dades.obtenir_valoracions_usuari(usuari1)
         val2 = self.conjunt_dades.obtenir_valoracions_usuari(usuari2)
         
@@ -177,7 +175,7 @@ class RecomanadorCollaboratiu(Recomanador):
 
         return numerador / (norma1 * norma2) 
 
-    def troba_veins(self, usuari_id): #Trobem els k usuaris més similars a l'usuari_id, que seran els veïns que utilitzarem per fer les recomanacions col·laboratives
+    def _troba_veins(self, usuari_id: str) -> List[Tuple[str, float]]:#Trobem els k usuaris més similars a l'usuari_id, que seran els veïns que utilitzarem per fer les recomanacions col·laboratives
         similituds = []
         for altre_usuari in self.conjunt_dades.obtenir_usuaris(): #Mirem tots els usuaris del conjunt de dades per calcular la similitud amb l'usuari_id
             if altre_usuari != usuari_id: #Només considerem els usuaris diferents a l'usuari_id
@@ -187,13 +185,13 @@ class RecomanadorCollaboratiu(Recomanador):
         similituds.sort(key=lambda x: x[1], reverse=True)#Ordenem la llista de similituds per la segona posició de cada tupla de manera descendent, els usuaris més similars apareixen primer
         return similituds[:self.k_veins] #Retornem només els primers k veins de la llista de similituds
     
-    def mitjana_usuari(self, usuari_id):
+    def _mitjana_usuari(self, usuari_id: str) -> float:
         valoracions = self.conjunt_dades.obtenir_valoracions_usuari(usuari_id) #Obtenim les valoracions de l'usuari_id, que és un diccionari on la clau és l'item_id i el valor és la puntuació que ha donat l'usuari a aquell item
         if not valoracions: #Si l'usuari no ha fet cap valoració, la mitjana és 0
             return 0
         return sum(valoracions.values()) / len(valoracions)
 
-    def predir_valoracions(self, usuari_id, item_id, veins):#Predim la valoració que l'usuari_id donaria a l'item_id utilitzant les valoracions dels veins, que són els k usuaris més similars a l'usuari_id
+    def predir_valoracions(self, usuari_id: str, item_id:str, veins:int) -> float:#Predim la valoració que l'usuari_id donaria a l'item_id utilitzant les valoracions dels veins, que són els k usuaris més similars a l'usuari_id
         m = self.mitjana_usuari(usuari_id)
         numerador = 0
         denominador = 0
@@ -210,7 +208,7 @@ class RecomanadorCollaboratiu(Recomanador):
 
         return m + (numerador / denominador)
 
-    def recomana(self, usuari_id, limit=5):
+    def recomana(self, usuari_id: str, limit: int = 5) -> List[Tuple[str, str, float]]:
         veins = self.troba_veins(usuari_id) #Obtenim els k veins més similars a l'usuari_id, que són els usuaris que utilitzarem per fer les recomanacions col·laboratives
         candidats = self.conjunt_dades.get_items_no_valorats(usuari_id) #Obtenim la llista d'items que l'usuari_id no ha valorat, que són els candidats a ser recomanats
         prediccions = []
@@ -223,7 +221,7 @@ class RecomanadorCollaboratiu(Recomanador):
         return prediccions[:limit]#Retornem només les primeres prediccions segons el límit establert, que en el nostre cas és 5 per defecte
 
 
-def mostrar_recomanacions(recomanacions):
+def mostrar_recomanacions(recomanacions) -> str:
     if not recomanacions:#Si la llista de recomanacions està buida, mostrem un missatge indicant que no hi ha recomanacions disponibles per a aquest usuari
         print("No hi ha recomanacions disponibles per a aquest usuari.")
         return
