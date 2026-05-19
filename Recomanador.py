@@ -110,3 +110,112 @@ def mostrar_recomanacions(recomanacions) -> str:
     print("Recomanacions:")
     for item_id, nom, score in recomanacions:
         print(f"- {nom} (ID: {item_id}), puntuació predita: {score:.2f}") #Mostrem el nom de l'item, el seu ID i la puntuació predita amb dos decimals
+
+class RecomanadorContingut(Recomanador):
+   
+    def __init__(self, conjunt_dades: DatasetBase, pmax: float = 5.0):
+        super().__init__(conjunt_dades)
+        self.pmax = pmax
+        self.tfidf_matrix = None
+        self.vocabulary = []
+        self.perfils_usuaris = {}
+        self.item_list = []
+        
+        # Verificar que el dataset tiene características
+        sample_features = list(conjunt_dades.items_details.values())
+        if not sample_features or all(not f for f in sample_features):
+            raise ValueError("El dataset no té característiques d'ítems per a l'anàlisi basat en contingut")
+        
+        logger.info("Recomanador basat en contingut inicialitzat")
+        self._construir_matriz_tfidf()
+
+    def _construir_matriz_tfidf(self):
+        logger.debug("Construint matriu TF-IDF...")
+        
+        # Obtener las características de todos los ítems
+        self.item_list = sorted(self.conjunt_dades.items.keys())
+        item_features = [
+            self.conjunt_dades.get_item_features(item_id)  # ← Usar características
+            for item_id in self.item_list
+        ]
+        
+        # Crear vectorizador TF-IDF
+        tfidf_vectorizer = TfidfVectorizer(stop_words='english', lowercase=True)
+        self.tfidf_matrix = tfidf_vectorizer.fit_transform(item_features).toarray()
+        self.vocabulary = tfidf_vectorizer.get_feature_names_out()
+        
+        logger.info(f"Matriz TF-IDF construida: {self.tfidf_matrix.shape}")
+        logger.info(f"Vocabulario: {len(self.vocabulary)} características")
+        logger.debug(f"Primeres características: {list(self.vocabulary[:10])}")
+
+    def _calcular_perfil_usuari(self, usuari_id: str) -> np.ndarray:
+        if usuari_id in self.perfils_usuaris:
+            return self.perfils_usuaris[usuari_id]
+        
+        valoracions = self.conjunt_dades.obtenir_valoracions_usuari(usuari_id)
+        if not valoracions:
+            logger.warning(f"Usuari {usuari_id} sense valoracions")
+            return np.zeros(len(self.vocabulary))
+        
+        # Crear vector de puntuaciones alineado amb item_list
+        puntuacions_vector = np.zeros(len(self.item_list))
+        for idx, item_id in enumerate(self.item_list):
+            if item_id in valoracions:
+                puntuacions_vector[idx] = valoracions[item_id]
+        
+        # Calcular perfil: Σ(p_u,i × M_i) / Σ(p_u,i)
+        suma_ponderada = puntuacions_vector @ self.tfidf_matrix  # (m×1) × (m×o) = (1×o)
+        suma_puntuacions = np.sum(puntuacions_vector)
+        
+        if suma_puntuacions == 0:
+            perfil = np.zeros(len(self.vocabulary))
+        else:
+            perfil = suma_ponderada / suma_puntuacions
+        
+        # Cachear el perfil
+        self.perfils_usuaris[usuari_id] = perfil
+        logger.debug(f"Perfil calculado per usuario {usuari_id}")
+        
+        return perfil
+
+    def _calcular_similitud_items(self, usuari_id: str) -> np.ndarray:
+        perfil = self._calcular_perfil_usuari(usuari_id)
+        
+        # Multiplicación de matrices: M (m×o) × Q_u^T (o×1) = (m×1)
+        similitudes = self.tfidf_matrix @ perfil
+        
+        logger.debug(f"Similitudes calculadas para usuario {usuari_id}")
+        return similitudes
+
+    def _calcular_puntuacio_final(self, similituds: np.ndarray) -> np.ndarray:
+        return similituds * self.pmax
+
+    def _predir_item(self, usuari_id: str, item_id: str) -> Optional[float]:
+        try:
+            idx = self.item_list.index(item_id)
+            similitudes = self._calcular_similitud_items(usuari_id)
+            puntuacions = self._calcular_puntuacio_final(similituds)
+            return float(puntuacions[idx])
+        except ValueError:
+            logger.warning(f"Ítem {item_id} no encontrado")
+            return None
+
+    def recomana(self, usuari_id: str, limit: int = 5) -> List[Tuple[str, str, float]]:
+        logger.debug(f"Generant recomanacions basades en contingut per a l'usuari {usuari_id}")
+        similitudes = self._calcular_similitud_items(usuari_id)
+        puntuacions = self._calcular_puntuacio_final(similitudes)
+        valorats = set(self.conjunt_dades.obtenir_valoracions_usuari(usuari_id).keys())
+        
+        recomanacions = []
+        for idx, item_id in enumerate(self.item_list):
+            if item_id not in valorats:
+                nom_item = self.conjunt_dades.items.get(item_id, f'Item {item_id}')
+                recomanacions.append((
+                    item_id,
+                    nom_item,
+                    float(puntuacions[idx])
+                ))
+        
+        recomanacions.sort(key=lambda x: x[2], reverse=True)
+        logger.info(f"Generades {len(recomanacions[:limit])} recomanacions basades en contingut")
+        return recomanacions[:limit]
