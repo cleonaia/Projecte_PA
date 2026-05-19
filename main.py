@@ -28,7 +28,7 @@ def configurar_logging():
 logger = configurar_logging()
 
 class DatasetBase(ABC):
-    
+
     def __init__(self, fitxer_valoracions: str, fitxer_items: str):
         self.fitxer_valoracions = fitxer_valoracions
         self.fitxer_items = fitxer_items
@@ -56,14 +56,14 @@ class DatasetBase(ABC):
         return sum(mitjanes)/len(mitjanes)
 
     def obtenir_usuaris(self) -> List[str]:
-        return sorted(self.valoracions_per_usuari.keys())
+        return sorted(self.valoracions_per_usuari.keys()) #Retornem una llista ordenada dels usuaris que han fet valoracions
 
     def obtenir_valoracions_usuari(self, usuari_id: str) -> Dict[str, float]:
-        return dict(self.valoracions_per_usuari.get(usuari_id, {}))
+        return dict(self.valoracions_per_usuari.get(usuari_id, {})) #Retornem un diccionari de les valoracions d'un usuari, on les claus són els item_id i els valors són les puntuacions, si l'usuari no ha fet valoracions, retornem un diccionari buit.
 
     def get_avg_global(self, min_vots: int = 0) -> float:
         if min_vots <= 0:
-            return self.avg_global_cached
+            return self.avg_global_cached 
         return self._calcular_avg_global_cached(min_vots)
 
     def get_item_avg(self, item_id: str) -> float:
@@ -224,21 +224,16 @@ class RecomanadorCollaboratiu(Recomanador):
         logger.info(f"Recomanador Col·laboratiu inicialitzat amb k_veins={k_veins}")
 
     def _calcula_similitud(self, usuari1: str, usuari2: str) -> float:
-        
         val1 = self.conjunt_dades.obtenir_valoracions_usuari(usuari1)
         val2 = self.conjunt_dades.obtenir_valoracions_usuari(usuari2)
-
         items_comuns = [item for item in val1 if item in val2]
         if not items_comuns:
             return 0
-
         numerador = sum(val1[item] * val2[item] for item in items_comuns)
         norma1 = math.sqrt(sum(val1[item] ** 2 for item in items_comuns))
         norma2 = math.sqrt(sum(val2[item] ** 2 for item in items_comuns))
-
         if norma1 == 0 or norma2 == 0:
             return 0
-
         return numerador / (norma1 * norma2)
 
     def _troba_veins(self, usuari_id: str) -> List[Tuple[str, float]]:
@@ -247,7 +242,6 @@ class RecomanadorCollaboratiu(Recomanador):
             if altres_usuari != usuari_id:
                 sim = self._calcula_similitud(usuari_id, altres_usuari)
                 similituds.append((altres_usuari, sim))
-
         similituds.sort(key=lambda x: x[1], reverse=True)
         return similituds[:self.k_veins]
 
@@ -258,7 +252,6 @@ class RecomanadorCollaboratiu(Recomanador):
         return sum(valoracions.values()) / len(valoracions)
 
     def _predir_item(self, usuari_id: str, item_id: str) -> Optional[float]:
-
         veins = self._troba_veins(usuari_id)
         if not veins:
             return None
