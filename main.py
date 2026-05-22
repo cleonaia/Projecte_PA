@@ -423,10 +423,10 @@ def main():
     tipus_dades = input("Tria el tipus de dades (pelis/llibres): ").strip().lower()
 
     if tipus_dades == "pelis" or tipus_dades == "1":
-        dataset = PelliculesDataset('pelicules_Dataset/ratings.csv', 'pelicules_Dataset/movies.csv')
+        dataset = PelliculesDataset('dataset/MovieLens100k/ratings.csv', 'dataset/MovieLens100k/movies.csv')
         dataset_type = "pelis"
     elif tipus_dades == "llibres" or tipus_dades == "2":
-        dataset = LlibresDataset('Libros_dataset/Ratings.csv', 'Libros_dataset/Users.csv')
+        dataset = LlibresDataset('dataset/Books/Ratings.csv', 'dataset/Books/Users.csv')
         dataset_type = "llibres"
     else:
         print("Tipus de dades no vàlid.")
